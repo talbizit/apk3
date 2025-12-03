@@ -21,7 +21,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.iconfit.schedule.BuildConfig
 import com.iconfit.schedule.ui.viewmodel.ScheduleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,7 +81,7 @@ fun SettingsScreen(
                     subtitle = "הנתונים נשמרים במטמון ל-4 שעות.\nנתונים ישנים מוצגים בזמן רענון ברקע."
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
                 SettingsItem(
                     icon = Icons.Default.Delete,

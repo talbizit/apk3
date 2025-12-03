@@ -23,8 +23,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,7 +46,6 @@ fun ScheduleScreen(
     viewModel: ScheduleViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val pullRefreshState = rememberPullToRefreshState()
 
     Scaffold(
         topBar = {
@@ -142,70 +139,67 @@ fun ScheduleScreen(
                     val filteredClasses = viewModel.getFilteredClasses()
                     val classesGroupedByDay = viewModel.getClassesGroupedByDay()
 
-                    PullToRefreshBox(
-                        isRefreshing = state.isRefreshing,
-                        onRefresh = { viewModel.refresh() },
-                        state = pullRefreshState,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        if (filteredClasses.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                    if (filteredClasses.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        imageVector = if (uiState.searchQuery.isNotEmpty())
-                                            Icons.Default.SearchOff
-                                        else Icons.Default.CalendarMonth,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(64.dp),
-                                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                                    )
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        text = if (uiState.searchQuery.isNotEmpty())
-                                            "לא נמצאו תוצאות"
-                                        else "אין שיעורים",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                Icon(
+                                    imageVector = if (uiState.searchQuery.isNotEmpty())
+                                        Icons.Default.SearchOff
+                                    else Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = if (uiState.searchQuery.isNotEmpty())
+                                        "לא נמצאו תוצאות"
+                                    else "אין שיעורים",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(1f)
+                        ) {
+                            if (uiState.selectedDay != null) {
+                                // Show classes for selected day
+                                items(filteredClasses, key = { it.id }) { fitnessClass ->
+                                    ClassCard(
+                                        fitnessClass = fitnessClass,
+                                        isFavorite = viewModel.isFavorite(fitnessClass.id),
+                                        onFavoriteClick = { viewModel.toggleFavorite(fitnessClass) }
                                     )
                                 }
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                if (uiState.selectedDay != null) {
-                                    // Show classes for selected day
-                                    items(filteredClasses, key = { it.id }) { fitnessClass ->
+                            } else {
+                                // Show grouped by day
+                                classesGroupedByDay.entries.sortedBy { it.key }.forEach { (day, classes) ->
+                                    item(key = "header_$day") {
+                                        DayHeader(dayName = HebrewDays.getDayName(day))
+                                    }
+                                    items(classes, key = { it.id }) { fitnessClass ->
                                         ClassCard(
                                             fitnessClass = fitnessClass,
                                             isFavorite = viewModel.isFavorite(fitnessClass.id),
                                             onFavoriteClick = { viewModel.toggleFavorite(fitnessClass) }
                                         )
                                     }
-                                } else {
-                                    // Show grouped by day
-                                    classesGroupedByDay.entries.sortedBy { it.key }.forEach { (day, classes) ->
-                                        item(key = "header_$day") {
-                                            DayHeader(dayName = HebrewDays.getDayName(day))
-                                        }
-                                        items(classes, key = { it.id }) { fitnessClass ->
-                                            ClassCard(
-                                                fitnessClass = fitnessClass,
-                                                isFavorite = viewModel.isFavorite(fitnessClass.id),
-                                                onFavoriteClick = { viewModel.toggleFavorite(fitnessClass) }
-                                            )
-                                        }
-                                    }
                                 }
+                            }
 
-                                item {
-                                    Spacer(modifier = Modifier.height(100.dp))
-                                }
+                            item {
+                                Spacer(modifier = Modifier.height(100.dp))
                             }
                         }
                     }
