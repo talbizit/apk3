@@ -7,14 +7,15 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
@@ -22,57 +23,39 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
+
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Create local.properties
-      run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-    - name: Create debug keystore
-      run: |
-        mkdir -p ~/.android
-        keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --no-daemon
-
     - name: Build Release APK
-      run: ./gradlew assembleRelease --no-daemon
+      run: ./gradlew assembleRelease
 
-    - name: Rename APK
-      run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/icon-fitness-schedule.apk
-
-    - name: Upload Debug APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: icon-fitness-schedule-debug
-        path: app/build/outputs/apk/debug/*.apk
-        retention-days: 30
-
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: icon-fitness-schedule-release
+        name: icon-fitness-schedule
         path: app/build/outputs/apk/release/icon-fitness-schedule.apk
-        retention-days: 30
 
     - name: Create Release
-      if: github.event_name == 'push'
+      if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master') || startsWith(github.ref, 'refs/heads/claude/')
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v1.0.${{ github.run_number }}
         name: Icon Fitness Schedule v1.0.${{ github.run_number }}
         body: |
-          ## Icon Fitness Schedule App - לוח שיעורים
+          ## Icon Fitness Schedule - לוח שיעורים
 
-          אפליקציה להצגת לוח שיעורי הסטודיו ברשת Icon Fitness
+          📱 אפליקציה להצגת לוח שיעורים של Icon Fitness
+          ✅ Build ${{ github.run_number }}
 
           ### התקנה:
           1. הורד את קובץ ה-APK למטה
-          2. התקן על מכשיר האנדרואיד שלך
-          3. אם נדרש, אפשר התקנה ממקורות לא ידועים
+          2. העבר למכשיר האנדרואיד שלך
+          3. אפשר התקנה ממקורות לא ידועים בהגדרות
+          4. לחץ על קובץ ה-APK להתקנה
 
           ### תכונות:
           - 📅 לוח שיעורים שבועי
