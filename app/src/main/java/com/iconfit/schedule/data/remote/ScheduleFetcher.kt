@@ -57,8 +57,10 @@ class ScheduleFetcher @Inject constructor(
 
     private suspend fun fetchFromWebsite(club: Club): WeekSchedule? {
         return try {
+            // Icon Fitness uses Fizikal platform - construct schedule URL
+            val scheduleUrl = "https://www.iconfitness.co.il/club/${club.id}/schedule"
             val request = Request.Builder()
-                .url(club.scheduleUrl)
+                .url(scheduleUrl)
                 .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
                 .header("Accept", "text/html,application/xhtml+xml")
                 .header("Accept-Language", "he-IL,he;q=0.9,en;q=0.8")

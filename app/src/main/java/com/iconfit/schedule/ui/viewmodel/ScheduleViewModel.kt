@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 data class AllClubsUiState(
     val isLoading: Boolean = true,
-    val selectedDay: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1, // Today
+    val selectedDay: Int? = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1, // Today, null = All
     val searchQuery: String = "",
     val schedulesByClub: Map<String, WeekSchedule> = emptyMap(),
     val favorites: Set<String> = emptySet(),
@@ -73,7 +73,7 @@ class ScheduleViewModel @Inject constructor(
         loadAllSchedules()
     }
 
-    fun selectDay(day: Int) {
+    fun selectDay(day: Int?) {
         _uiState.update { it.copy(selectedDay = day) }
     }
 
@@ -114,7 +114,12 @@ class ScheduleViewModel @Inject constructor(
         val state = _uiState.value
         val schedule = state.schedulesByClub[clubId] ?: return emptyList()
 
-        var classes = schedule.classes.filter { it.dayOfWeek == state.selectedDay }
+        // Filter by day (if selectedDay is null, show all days)
+        var classes = if (state.selectedDay != null) {
+            schedule.classes.filter { it.dayOfWeek == state.selectedDay }
+        } else {
+            schedule.classes
+        }
 
         // Filter by search query
         if (state.searchQuery.isNotBlank()) {
@@ -126,7 +131,7 @@ class ScheduleViewModel @Inject constructor(
             }
         }
 
-        return classes.sortedBy { it.startTime }
+        return classes.sortedWith(compareBy({ it.dayOfWeek }, { it.startTime }))
     }
 
     fun hasClassesForDay(clubId: String): Boolean {
