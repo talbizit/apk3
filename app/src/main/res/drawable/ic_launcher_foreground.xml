@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0"/>
+
+    <!-- Dumbbell icon -->
+    <group
+        android:translateX="30"
+        android:translateY="42">
+        <!-- Left weight -->
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M8,6 L8,18 L14,18 L14,6 Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M4,8 L4,16 L8,16 L8,8 Z"/>
+
+        <!-- Bar -->
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M14,10 L34,10 L34,14 L14,14 Z"/>
+
+        <!-- Right weight -->
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M34,6 L34,18 L40,18 L40,6 Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M40,8 L40,16 L44,16 L44,8 Z"/>
+    </group>
+
+    <!-- Calendar icon below -->
+    <group
+        android:translateX="38"
+        android:translateY="62">
+        <path
+            android:fillColor="#004E89"
+            android:pathData="M0,4 L32,4 L32,28 L0,28 Z"/>
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M2,8 L30,8 L30,26 L2,26 Z"/>
+        <path
+            android:fillColor="#004E89"
+            android:pathData="M6,0 L10,0 L10,6 L6,6 Z"/>
+        <path
+            android:fillColor="#004E89"
+            android:pathData="M22,0 L26,0 L26,6 L22,6 Z"/>
+        <!-- Calendar dots -->
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M6,13 L10,13 L10,17 L6,17 Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M14,13 L18,13 L18,17 L14,17 Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M22,13 L26,13 L26,17 L22,17 Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M6,20 L10,20 L10,24 L6,24 Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M14,20 L18,20 L18,24 L14,24 Z"/>
+    </group>
+</vector>
