@@ -37,7 +37,7 @@ jobs:
       run: ./gradlew assembleRelease --no-daemon
 
     - name: Rename APK
-      run: mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/icon-fitness-schedule.apk
+      run: mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/icon-fitness-schedule.apk
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
