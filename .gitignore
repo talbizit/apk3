@@ -81,9 +81,9 @@ lint/reports/
 # Android Profiling
 *.hprof
 
-# Gradle wrapper (will be downloaded in CI)
+# Gradle wrapper - include both files
 !gradle/wrapper/gradle-wrapper.properties
-gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
 
 # Mac
 .DS_Store
