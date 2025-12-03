@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -34,6 +36,9 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease --no-daemon
 
+    - name: Rename APK
+      run: mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/icon-fitness-schedule.apk
+
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
@@ -45,49 +50,38 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: icon-fitness-schedule-release
-        path: app/build/outputs/apk/release/*.apk
+        path: app/build/outputs/apk/release/icon-fitness-schedule.apk
         retention-days: 30
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    permissions:
-      contents: write
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Download Release APK
-      uses: actions/download-artifact@v4
-      with:
-        name: icon-fitness-schedule-release
-        path: ./apk
-
-    - name: Get version
-      id: version
-      run: echo "version=$(date +'%Y.%m.%d')-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
-
     - name: Create Release
+      if: github.event_name == 'push'
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: v${{ steps.version.outputs.version }}
-        name: Icon Fitness Schedule v${{ steps.version.outputs.version }}
+        tag_name: v1.0.${{ github.run_number }}
+        name: Icon Fitness Schedule v1.0.${{ github.run_number }}
         body: |
-          ## Icon Fitness Schedule App
+          ## Icon Fitness Schedule App - לוח שיעורים
 
-          לוח שיעורים לרשת Icon Fitness
+          אפליקציה להצגת לוח שיעורי הסטודיו ברשת Icon Fitness
 
-          ### Features:
+          ### התקנה:
+          1. הורד את קובץ ה-APK למטה
+          2. התקן על מכשיר האנדרואיד שלך
+          3. אם נדרש, אפשר התקנה ממקורות לא ידועים
+
+          ### תכונות:
           - 📅 לוח שיעורים שבועי
-          - ⭐ מועדפים
-          - 🔍 חיפוש
+          - ⭐ מועדפים (מרובים)
+          - 🔍 חיפוש לפי שיעור/מדריך
+          - 📆 סינון לפי יום
           - 💾 מטמון 4 שעות
+          - 🔄 רענון ברקע אוטומטי
+          - 🌙 תמיכה במצב כהה
+          - ➡️ ממשק בעברית (RTL)
 
-          ### Download:
-          Download the APK file below and install on your Android device.
-        files: ./apk/*.apk
+          ### תאימות:
+          Android 8.0+ (API 26)
+        files: app/build/outputs/apk/release/icon-fitness-schedule.apk
         draft: false
         prerelease: false
       env:
