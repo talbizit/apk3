@@ -2,13 +2,11 @@ package com.iconfit.schedule.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.iconfit.schedule.data.ClubsData
 import com.iconfit.schedule.data.model.Club
 import com.iconfit.schedule.data.model.FitnessClass
-import com.iconfit.schedule.data.model.LoadingState
-import com.iconfit.schedule.data.model.ScheduleUiState
 import com.iconfit.schedule.data.model.WeekSchedule
 import com.iconfit.schedule.data.repository.ScheduleRepository
-import com.iconfit.schedule.data.repository.ScheduleResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,129 +16,81 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
 
+data class AllClubsUiState(
+    val isLoading: Boolean = true,
+    val selectedDay: Int = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1, // Today
+    val searchQuery: String = "",
+    val schedulesByClub: Map<String, WeekSchedule> = emptyMap(),
+    val favorites: Set<String> = emptySet(),
+    val expandedClubs: Set<String> = emptySet() // Which clubs are expanded
+)
+
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(
     private val repository: ScheduleRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ScheduleUiState())
-    val uiState: StateFlow<ScheduleUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(AllClubsUiState())
+    val uiState: StateFlow<AllClubsUiState> = _uiState.asStateFlow()
+
+    val clubs = ClubsData.clubs
+    val clubsByRegion = ClubsData.clubsByRegion
+    val regions = ClubsData.regions
 
     init {
-        loadInitialData()
+        loadAllSchedules()
+        loadFavorites()
     }
 
-    private fun loadInitialData() {
+    private fun loadFavorites() {
         viewModelScope.launch {
-            // Load clubs
-            val clubs = repository.getClubs()
-            _uiState.update { it.copy(clubs = clubs) }
-
-            // Load favorites
             repository.getFavoritesFlow().collect { favorites ->
                 _uiState.update { it.copy(favorites = favorites) }
             }
         }
-
-        viewModelScope.launch {
-            // Load previously selected club or default to first
-            val selectedClubId = repository.getSelectedClub()
-            val clubs = repository.getClubs()
-            val club = selectedClubId?.let { repository.getClubById(it) } ?: clubs.firstOrNull()
-
-            if (club != null) {
-                selectClub(club)
-            }
-        }
     }
 
-    fun selectClub(club: Club) {
+    private fun loadAllSchedules() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            val schedules = mutableMapOf<String, WeekSchedule>()
+            clubs.forEach { club ->
+                val result = repository.getScheduleForClub(club)
+                result?.let { schedules[club.id] = it }
+            }
+
             _uiState.update {
                 it.copy(
-                    selectedClub = club,
-                    schedule = LoadingState.Loading
+                    isLoading = false,
+                    schedulesByClub = schedules
                 )
-            }
-
-            repository.saveSelectedClub(club.id)
-            loadSchedule(club)
-        }
-    }
-
-    private fun loadSchedule(club: Club, forceRefresh: Boolean = false) {
-        viewModelScope.launch {
-            repository.getSchedule(club, forceRefresh).collect { result ->
-                when (result) {
-                    is ScheduleResult.Fresh -> {
-                        _uiState.update {
-                            it.copy(
-                                schedule = LoadingState.Success(result.schedule),
-                                isRefreshingInBackground = false,
-                                lastUpdateTime = System.currentTimeMillis()
-                            )
-                        }
-                    }
-                    is ScheduleResult.Cached -> {
-                        _uiState.update {
-                            it.copy(
-                                schedule = LoadingState.Success(result.schedule, isStale = result.isStale),
-                                isRefreshingInBackground = false,
-                                lastUpdateTime = result.cachedAt
-                            )
-                        }
-                    }
-                    is ScheduleResult.RefreshingInBackground -> {
-                        _uiState.update {
-                            it.copy(
-                                schedule = LoadingState.Success(result.schedule, isStale = true, isRefreshing = true),
-                                isRefreshingInBackground = true,
-                                lastUpdateTime = result.cachedAt
-                            )
-                        }
-                    }
-                    is ScheduleResult.Refreshed -> {
-                        _uiState.update {
-                            it.copy(
-                                schedule = LoadingState.Success(result.schedule),
-                                isRefreshingInBackground = false,
-                                lastUpdateTime = System.currentTimeMillis()
-                            )
-                        }
-                    }
-                    is ScheduleResult.Error -> {
-                        if (result.cachedSchedule != null) {
-                            _uiState.update {
-                                it.copy(
-                                    schedule = LoadingState.Success(result.cachedSchedule, isStale = true),
-                                    isRefreshingInBackground = false
-                                )
-                            }
-                        } else {
-                            _uiState.update {
-                                it.copy(
-                                    schedule = LoadingState.Error(result.message),
-                                    isRefreshingInBackground = false
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     }
 
     fun refresh() {
-        val club = _uiState.value.selectedClub ?: return
-        loadSchedule(club, forceRefresh = true)
+        loadAllSchedules()
     }
 
-    fun selectDay(day: Int?) {
+    fun selectDay(day: Int) {
         _uiState.update { it.copy(selectedDay = day) }
     }
 
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun toggleClubExpanded(clubId: String) {
+        _uiState.update { state ->
+            val expanded = state.expandedClubs.toMutableSet()
+            if (expanded.contains(clubId)) {
+                expanded.remove(clubId)
+            } else {
+                expanded.add(clubId)
+            }
+            state.copy(expandedClubs = expanded)
+        }
     }
 
     fun toggleFavorite(fitnessClass: FitnessClass) {
@@ -156,22 +106,15 @@ class ScheduleViewModel @Inject constructor(
     fun clearCache() {
         viewModelScope.launch {
             repository.clearAllCache()
-            _uiState.value.selectedClub?.let { club ->
-                loadSchedule(club, forceRefresh = true)
-            }
+            loadAllSchedules()
         }
     }
 
-    fun getFilteredClasses(): List<FitnessClass> {
+    fun getClassesForClub(clubId: String): List<FitnessClass> {
         val state = _uiState.value
-        val schedule = (state.schedule as? LoadingState.Success)?.data ?: return emptyList()
+        val schedule = state.schedulesByClub[clubId] ?: return emptyList()
 
-        var classes = schedule.classes
-
-        // Filter by day
-        state.selectedDay?.let { day ->
-            classes = classes.filter { it.dayOfWeek == day }
-        }
+        var classes = schedule.classes.filter { it.dayOfWeek == state.selectedDay }
 
         // Filter by search query
         if (state.searchQuery.isNotBlank()) {
@@ -183,23 +126,31 @@ class ScheduleViewModel @Inject constructor(
             }
         }
 
-        return classes
+        return classes.sortedBy { it.startTime }
     }
 
-    fun getClassesGroupedByDay(): Map<Int, List<FitnessClass>> {
-        return getFilteredClasses().groupBy { it.dayOfWeek }
+    fun hasClassesForDay(clubId: String): Boolean {
+        return getClassesForClub(clubId).isNotEmpty()
     }
 
-    fun getFavoriteClasses(): List<FitnessClass> {
+    fun getAllFavoriteClasses(): List<Pair<Club, FitnessClass>> {
         val state = _uiState.value
-        val schedule = (state.schedule as? LoadingState.Success)?.data ?: return emptyList()
+        val result = mutableListOf<Pair<Club, FitnessClass>>()
 
-        return schedule.classes.filter { state.favorites.contains(it.id) }
+        clubs.forEach { club ->
+            val schedule = state.schedulesByClub[club.id] ?: return@forEach
+            schedule.classes
+                .filter { state.favorites.contains(it.id) }
+                .forEach { fitnessClass ->
+                    result.add(Pair(club, fitnessClass))
+                }
+        }
+
+        return result.sortedWith(compareBy({ it.second.dayOfWeek }, { it.second.startTime }))
     }
 
     fun getTodayDayOfWeek(): Int {
         val calendar = Calendar.getInstance()
-        // Convert from Calendar (Sunday=1) to our format (Sunday=0)
         return (calendar.get(Calendar.DAY_OF_WEEK) - 1)
     }
 }

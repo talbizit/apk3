@@ -135,4 +135,24 @@ class ScheduleRepository @Inject constructor(
      * Get cache age for club
      */
     suspend fun getCacheAge(clubId: String): Long? = cacheManager.getCacheAge(clubId)
+
+    /**
+     * Get schedule for a single club (simplified version for all-clubs view)
+     * Uses stale-while-revalidate strategy
+     */
+    suspend fun getScheduleForClub(club: Club): WeekSchedule? {
+        // Check cache first
+        val cached = cacheManager.getCachedSchedule(club.id)
+
+        if (cached != null) {
+            // Return cached data (will refresh all in background if stale)
+            return cached.schedule
+        }
+
+        // No cache - fetch fresh data
+        val result = scheduleFetcher.fetchSchedule(club)
+        return result.getOrNull()?.also { schedule ->
+            cacheManager.cacheSchedule(club.id, schedule)
+        }
+    }
 }

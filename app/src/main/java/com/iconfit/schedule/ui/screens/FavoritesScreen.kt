@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.iconfit.schedule.data.model.Club
+import com.iconfit.schedule.data.model.FitnessClass
 import com.iconfit.schedule.data.model.HebrewDays
 import com.iconfit.schedule.ui.components.ClassCard
 import com.iconfit.schedule.ui.theme.Favorite
@@ -39,8 +41,7 @@ fun FavoritesScreen(
     viewModel: ScheduleViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val favoriteClasses = viewModel.getFavoriteClasses()
-        .sortedWith(compareBy({ it.dayOfWeek }, { it.startTime }))
+    val favoriteClasses = viewModel.getAllFavoriteClasses()
 
     Scaffold(
         topBar = {
@@ -121,9 +122,9 @@ fun FavoritesScreen(
                 }
 
                 // Group by day
-                val groupedByDay = favoriteClasses.groupBy { it.dayOfWeek }
+                val groupedByDay = favoriteClasses.groupBy { it.second.dayOfWeek }
 
-                groupedByDay.entries.sortedBy { it.key }.forEach { (day, classes) ->
+                groupedByDay.entries.sortedBy { it.key }.forEach { (day, classesWithClub) ->
                     item(key = "fav_header_$day") {
                         Text(
                             text = "יום ${HebrewDays.getDayName(day)}",
@@ -137,12 +138,14 @@ fun FavoritesScreen(
                         )
                     }
 
-                    items(classes.sortedBy { it.startTime }, key = { "fav_${it.id}" }) { fitnessClass ->
-                        ClassCard(
+                    items(
+                        classesWithClub.sortedBy { it.second.startTime },
+                        key = { "fav_${it.second.id}" }
+                    ) { (club, fitnessClass) ->
+                        FavoriteClassCard(
+                            club = club,
                             fitnessClass = fitnessClass,
-                            isFavorite = true,
-                            onFavoriteClick = { viewModel.toggleFavorite(fitnessClass) },
-                            showDay = false
+                            onFavoriteClick = { viewModel.toggleFavorite(fitnessClass) }
                         )
                     }
                 }
@@ -152,5 +155,31 @@ fun FavoritesScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FavoriteClassCard(
+    club: Club,
+    fitnessClass: FitnessClass,
+    onFavoriteClick: () -> Unit
+) {
+    Column {
+        // Club name header
+        Text(
+            text = club.nameHebrew,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            textAlign = TextAlign.End
+        )
+        ClassCard(
+            fitnessClass = fitnessClass,
+            isFavorite = true,
+            onFavoriteClick = onFavoriteClick,
+            showDay = false
+        )
     }
 }

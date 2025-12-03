@@ -7,8 +7,8 @@ data class Club(
     val id: String,
     val name: String,
     val nameHebrew: String,
-    val address: String = "",
-    val scheduleUrl: String
+    val region: String = "",
+    val address: String = ""
 )
 
 @Serializable
