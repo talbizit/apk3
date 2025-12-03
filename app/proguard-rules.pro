@@ -22,6 +22,7 @@
 # JSoup
 -keep class org.jsoup.** { *; }
 -keeppackagenames org.jsoup.nodes
+-dontwarn org.jspecify.annotations.**
 
 # OkHttp
 -dontwarn okhttp3.**
