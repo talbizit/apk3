@@ -155,4 +155,14 @@ class ScheduleRepository @Inject constructor(
             cacheManager.cacheSchedule(club.id, schedule)
         }
     }
+
+    /**
+     * Save expanded clubs state
+     */
+    suspend fun saveExpandedClubs(expandedClubs: Set<String>) = cacheManager.saveExpandedClubs(expandedClubs)
+
+    /**
+     * Get expanded clubs
+     */
+    suspend fun getExpandedClubs(): Set<String> = cacheManager.getExpandedClubs()
 }

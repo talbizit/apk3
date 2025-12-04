@@ -36,6 +36,7 @@ class CacheManager @Inject constructor(
         private fun cacheTimeKey(clubId: String) = longPreferencesKey("cache_time_$clubId")
         private val SELECTED_CLUB_KEY = stringPreferencesKey("selected_club")
         private val FAVORITES_KEY = stringSetPreferencesKey("favorites")
+        private val EXPANDED_CLUBS_KEY = stringSetPreferencesKey("expanded_clubs")
     }
 
     // Cache schedule for a club
@@ -136,5 +137,24 @@ class CacheManager @Inject constructor(
         }
         saveFavorites(current)
         return isNowFavorite
+    }
+
+    // Save expanded clubs
+    suspend fun saveExpandedClubs(expandedClubs: Set<String>) {
+        context.dataStore.edit { prefs ->
+            prefs[EXPANDED_CLUBS_KEY] = expandedClubs
+        }
+    }
+
+    // Get expanded clubs
+    suspend fun getExpandedClubs(): Set<String> {
+        return context.dataStore.data.first()[EXPANDED_CLUBS_KEY] ?: emptySet()
+    }
+
+    // Get expanded clubs flow
+    fun getExpandedClubsFlow(): Flow<Set<String>> {
+        return context.dataStore.data.map { prefs ->
+            prefs[EXPANDED_CLUBS_KEY] ?: emptySet()
+        }
     }
 }

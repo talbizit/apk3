@@ -179,9 +179,12 @@ class ScheduleFetcher @Inject constructor(
 
     /**
      * Generate demo schedule data for testing
+     * Uses club ID to seed randomization so each club gets different classes
      */
     fun generateDemoSchedule(club: Club): WeekSchedule {
         val classes = mutableListOf<FitnessClass>()
+        val clubSeed = club.id.hashCode()
+
         val classTypes = listOf(
             Triple("ספינינג", ClassCategory.CYCLING, 45),
             Triple("יוגה", ClassCategory.YOGA, 60),
@@ -197,21 +200,25 @@ class ScheduleFetcher @Inject constructor(
             Triple("Step Aerobics", ClassCategory.CARDIO, 50),
             Triple("פילאטיס מכשירים", ClassCategory.PILATES, 55),
             Triple("ספינינג אנרגטי", ClassCategory.CYCLING, 50),
-            Triple("Cross Training", ClassCategory.FUNCTIONAL, 45)
+            Triple("Cross Training", ClassCategory.FUNCTIONAL, 45),
+            Triple("HIIT", ClassCategory.CARDIO, 40),
+            Triple("בטן וגב", ClassCategory.STRENGTH, 30),
+            Triple("אקווה ג'ים", ClassCategory.AQUA, 45)
         )
 
         val instructors = listOf(
             "מיכל כהן", "דנה לוי", "יעל אברהם", "נועה שמעון",
             "רון דוד", "אורי גולן", "שירה ברק", "תמר יוסף",
-            "איתי מזרחי", "ליאור פרץ", "מאיה שלום", "גיא רוזן"
+            "איתי מזרחי", "ליאור פרץ", "מאיה שלום", "גיא רוזן",
+            "עדי ניסים", "יובל אשכנזי", "נטלי רז", "אלון בן דוד"
         )
 
-        val rooms = listOf("סטודיו 1", "סטודיו 2", "סטודיו 3", "אולם ספינינג", "בריכה")
+        val rooms = listOf("סטודיו 1", "סטודיו 2", "סטודיו 3", "אולם ספינינג", "בריכה", "אולם ראשי")
 
         val morningTimes = listOf("06:30", "07:30", "08:30", "09:30", "10:30", "11:30")
         val afternoonTimes = listOf("16:00", "17:00", "18:00", "19:00", "20:00", "21:00")
 
-        // Generate classes for each day
+        // Generate classes for each day - use clubSeed for variety
         for (day in 0..6) { // Sunday to Saturday
             val isWeekend = day == 5 || day == 6 // Friday or Saturday
             val times = if (isWeekend) {
@@ -221,17 +228,23 @@ class ScheduleFetcher @Inject constructor(
                 morningTimes + afternoonTimes
             }
 
+            // Use club seed to offset class selection
+            val clubOffset = Math.abs(clubSeed) % classTypes.size
+            val instructorOffset = Math.abs(clubSeed / 7) % instructors.size
+
             times.forEachIndexed { index, startTime ->
-                val classType = classTypes[(day * 3 + index) % classTypes.size]
-                val instructor = instructors[(day * 2 + index) % instructors.size]
-                val room = rooms[index % rooms.size]
+                val classIndex = (clubOffset + day * 3 + index) % classTypes.size
+                val classType = classTypes[classIndex]
+                val instructorIndex = (instructorOffset + day * 2 + index) % instructors.size
+                val instructor = instructors[instructorIndex]
+                val room = rooms[(clubOffset + index) % rooms.size]
                 val duration = classType.third
 
                 val endTime = calculateEndTime(startTime, duration)
 
                 classes.add(
                     FitnessClass(
-                        id = "${club.id}_${day}_${startTime}_${classType.first}".hashCode().toString(),
+                        id = "${club.id}_${day}_${startTime}".hashCode().toString(),
                         name = classType.first,
                         instructor = instructor,
                         dayOfWeek = day,

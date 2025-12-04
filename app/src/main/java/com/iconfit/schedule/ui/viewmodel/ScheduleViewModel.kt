@@ -38,8 +38,16 @@ class ScheduleViewModel @Inject constructor(
     val regions = ClubsData.regions
 
     init {
+        loadExpandedClubs()
         loadAllSchedules()
         loadFavorites()
+    }
+
+    private fun loadExpandedClubs() {
+        viewModelScope.launch {
+            val expanded = repository.getExpandedClubs()
+            _uiState.update { it.copy(expandedClubs = expanded) }
+        }
     }
 
     private fun loadFavorites() {
@@ -82,14 +90,16 @@ class ScheduleViewModel @Inject constructor(
     }
 
     fun toggleClubExpanded(clubId: String) {
-        _uiState.update { state ->
-            val expanded = state.expandedClubs.toMutableSet()
-            if (expanded.contains(clubId)) {
-                expanded.remove(clubId)
-            } else {
-                expanded.add(clubId)
-            }
-            state.copy(expandedClubs = expanded)
+        val newExpanded = _uiState.value.expandedClubs.toMutableSet()
+        if (newExpanded.contains(clubId)) {
+            newExpanded.remove(clubId)
+        } else {
+            newExpanded.add(clubId)
+        }
+        _uiState.update { it.copy(expandedClubs = newExpanded) }
+        // Save to preferences
+        viewModelScope.launch {
+            repository.saveExpandedClubs(newExpanded)
         }
     }
 

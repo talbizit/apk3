@@ -12,20 +12,20 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Colors
-val Primary = Color(0xFFFF6B35)
-val PrimaryVariant = Color(0xFFE55A24)
-val Secondary = Color(0xFF004E89)
-val SecondaryVariant = Color(0xFF003D6B)
+// Colors - Standard Material blue/teal theme
+val Primary = Color(0xFF1976D2)  // Material Blue 700
+val PrimaryVariant = Color(0xFF1565C0)  // Material Blue 800
+val Secondary = Color(0xFF26A69A)  // Teal 400
+val SecondaryVariant = Color(0xFF00897B)  // Teal 600
 val Background = Color(0xFFFAFAFA)
 val Surface = Color(0xFFFFFFFF)
-val Error = Color(0xFFB00020)
+val Error = Color(0xFFD32F2F)
 val OnPrimary = Color(0xFFFFFFFF)
 val OnSecondary = Color(0xFFFFFFFF)
-val OnBackground = Color(0xFF1C1B1F)
-val OnSurface = Color(0xFF1C1B1F)
+val OnBackground = Color(0xFF212121)
+val OnSurface = Color(0xFF212121)
 val OnError = Color(0xFFFFFFFF)
-val Favorite = Color(0xFFFFD700)
+val Favorite = Color(0xFFFFC107)  // Amber
 val FavoriteHighlight = Color(0xFFFFF8E1)
 
 // Category colors
