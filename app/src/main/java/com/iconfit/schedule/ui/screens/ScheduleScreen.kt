@@ -1,10 +1,13 @@
 package com.iconfit.schedule.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,8 +25,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -40,10 +47,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.iconfit.schedule.data.ClubsData
 import com.iconfit.schedule.data.model.Club
 import com.iconfit.schedule.data.model.FitnessClass
 import com.iconfit.schedule.ui.components.ClassCard
@@ -57,6 +65,7 @@ fun ScheduleScreen(
     viewModel: ScheduleViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -133,8 +142,8 @@ fun ScheduleScreen(
                         .fillMaxSize()
                         .weight(1f)
                 ) {
-                    viewModel.regions.forEach { region ->
-                        val clubsInRegion = viewModel.clubsByRegion[region] ?: emptyList()
+                    uiState.regions.forEach { region ->
+                        val clubsInRegion = uiState.clubsByRegion[region] ?: emptyList()
                         val clubsWithClasses = clubsInRegion.filter { club ->
                             viewModel.hasClassesForDay(club.id)
                         }
@@ -161,7 +170,23 @@ fun ScheduleScreen(
                                     onToggleExpand = { viewModel.toggleClubExpanded(club.id) },
                                     classes = classes,
                                     isFavorite = { viewModel.isFavorite(it) },
-                                    onFavoriteClick = { viewModel.toggleFavorite(it) }
+                                    onFavoriteClick = { viewModel.toggleFavorite(it) },
+                                    onOpenWebsite = {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(club.websiteUrl))
+                                        context.startActivity(intent)
+                                    },
+                                    onOpenApp = {
+                                        // Try to open Icon Fitness app
+                                        val appIntent = context.packageManager.getLaunchIntentForPackage(ClubsData.ICON_APP_PACKAGE)
+                                        if (appIntent != null) {
+                                            context.startActivity(appIntent)
+                                        } else {
+                                            // App not installed, open Play Store
+                                            val playStoreIntent = Intent(Intent.ACTION_VIEW,
+                                                Uri.parse("https://play.google.com/store/apps/details?id=${ClubsData.ICON_APP_PACKAGE}"))
+                                            context.startActivity(playStoreIntent)
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -169,7 +194,7 @@ fun ScheduleScreen(
 
                     // Empty state for search
                     if (uiState.searchQuery.isNotBlank()) {
-                        val totalClasses = viewModel.clubs.sumOf { viewModel.getClassesForClub(it.id).size }
+                        val totalClasses = uiState.clubs.sumOf { viewModel.getClassesForClub(it.id).size }
                         if (totalClasses == 0) {
                             item {
                                 Box(
@@ -235,7 +260,9 @@ private fun ClubCard(
     onToggleExpand: () -> Unit,
     classes: List<FitnessClass>,
     isFavorite: (String) -> Boolean,
-    onFavoriteClick: (FitnessClass) -> Unit
+    onFavoriteClick: (FitnessClass) -> Unit,
+    onOpenWebsite: () -> Unit,
+    onOpenApp: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -281,7 +308,7 @@ private fun ClubCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = if (classCount > 0) "$classCount שיעורים" else "אין שיעורים",
+                        text = if (classCount > 0) "$classCount שיעורים (לדוגמה)" else "טען מהאפליקציה",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.End,
@@ -305,6 +332,50 @@ private fun ClubCard(
                 Column(
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
+                    // Open official schedule buttons
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onOpenApp,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FitnessCenter,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("אפליקציה", style = MaterialTheme.typography.labelMedium)
+                        }
+                        Button(
+                            onClick = onOpenWebsite,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.OpenInNew,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("לוח רשמי", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+
+                    // Sample data notice
+                    Text(
+                        text = "נתונים לדוגמה - פתח את הלוח הרשמי לשיעורים עדכניים",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+
                     if (classes.isEmpty()) {
                         Text(
                             text = "אין שיעורים ביום זה",

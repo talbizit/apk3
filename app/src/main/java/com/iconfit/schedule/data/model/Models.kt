@@ -8,7 +8,9 @@ data class Club(
     val name: String,
     val nameHebrew: String,
     val region: String = "",
-    val address: String = ""
+    val address: String = "",
+    val websiteUrl: String = "",  // Link to official schedule page
+    val hebrewSlug: String = ""   // Hebrew URL slug for website
 )
 
 @Serializable

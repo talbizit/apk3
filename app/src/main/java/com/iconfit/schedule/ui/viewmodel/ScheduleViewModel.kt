@@ -22,7 +22,10 @@ data class AllClubsUiState(
     val searchQuery: String = "",
     val schedulesByClub: Map<String, WeekSchedule> = emptyMap(),
     val favorites: Set<String> = emptySet(),
-    val expandedClubs: Set<String> = emptySet() // Which clubs are expanded
+    val expandedClubs: Set<String> = emptySet(), // Which clubs are expanded
+    val clubs: List<Club> = emptyList(),
+    val clubsByRegion: Map<String, List<Club>> = emptyMap(),
+    val regions: List<String> = emptyList()
 )
 
 @HiltViewModel
@@ -33,13 +36,14 @@ class ScheduleViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AllClubsUiState())
     val uiState: StateFlow<AllClubsUiState> = _uiState.asStateFlow()
 
-    val clubs = ClubsData.clubs
-    val clubsByRegion = ClubsData.clubsByRegion
-    val regions = ClubsData.regions
+    // Public accessors for clubs data from current state
+    val clubs: List<Club> get() = _uiState.value.clubs
+    val clubsByRegion: Map<String, List<Club>> get() = _uiState.value.clubsByRegion
+    val regions: List<String> get() = _uiState.value.regions
 
     init {
         loadExpandedClubs()
-        loadAllSchedules()
+        loadClubsAndSchedules()
         loadFavorites()
     }
 
@@ -58,12 +62,28 @@ class ScheduleViewModel @Inject constructor(
         }
     }
 
-    private fun loadAllSchedules() {
+    private fun loadClubsAndSchedules() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
+            // First, fetch clubs from website (falls back to static list)
+            val fetchedClubs = repository.fetchClubs()
+
+            // Group clubs by region
+            val groupedByRegion = fetchedClubs.groupBy { it.region }
+            val orderedRegions = listOf("צפון", "מרכז", "דרום").filter { groupedByRegion.containsKey(it) }
+
+            _uiState.update {
+                it.copy(
+                    clubs = fetchedClubs,
+                    clubsByRegion = groupedByRegion,
+                    regions = orderedRegions
+                )
+            }
+
+            // Then load schedules for all clubs
             val schedules = mutableMapOf<String, WeekSchedule>()
-            clubs.forEach { club ->
+            fetchedClubs.forEach { club ->
                 val result = repository.getScheduleForClub(club)
                 result?.let { schedules[club.id] = it }
             }
@@ -78,7 +98,7 @@ class ScheduleViewModel @Inject constructor(
     }
 
     fun refresh() {
-        loadAllSchedules()
+        loadClubsAndSchedules()
     }
 
     fun selectDay(day: Int?) {
@@ -116,7 +136,7 @@ class ScheduleViewModel @Inject constructor(
     fun clearCache() {
         viewModelScope.launch {
             repository.clearAllCache()
-            loadAllSchedules()
+            loadClubsAndSchedules()
         }
     }
 
@@ -152,7 +172,7 @@ class ScheduleViewModel @Inject constructor(
         val state = _uiState.value
         val result = mutableListOf<Pair<Club, FitnessClass>>()
 
-        clubs.forEach { club ->
+        state.clubs.forEach { club ->
             val schedule = state.schedulesByClub[club.id] ?: return@forEach
             schedule.classes
                 .filter { state.favorites.contains(it.id) }

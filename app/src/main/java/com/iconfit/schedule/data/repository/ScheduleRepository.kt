@@ -87,7 +87,15 @@ class ScheduleRepository @Inject constructor(
     }
 
     /**
-     * Get all clubs
+     * Fetch clubs from website, fall back to static list
+     */
+    suspend fun fetchClubs(): List<Club> {
+        val result = scheduleFetcher.fetchClubs()
+        return result.getOrNull()?.takeIf { it.isNotEmpty() } ?: ClubsData.clubs
+    }
+
+    /**
+     * Get all clubs (static fallback)
      */
     fun getClubs(): List<Club> = ClubsData.clubs
 

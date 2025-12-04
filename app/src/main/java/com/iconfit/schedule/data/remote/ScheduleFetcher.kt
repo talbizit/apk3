@@ -31,9 +31,106 @@ class ScheduleFetcher @Inject constructor(
 ) {
     private val client = OkHttpClient.Builder()
         .followRedirects(true)
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+    companion object {
+        private const val BASE_URL = "https://www.iconfitness.co.il"
+    }
+
+    /**
+     * Fetch list of clubs from the Icon Fitness website
+     */
+    suspend fun fetchClubs(): Result<List<Club>> = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url(BASE_URL)
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+                .header("Accept-Language", "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7")
+                .header("Cache-Control", "no-cache")
+                .build()
+
+            val response = client.newCall(request).execute()
+            val html = response.body?.string() ?: return@withContext Result.failure(Exception("Empty response"))
+
+            val clubs = parseClubsFromHtml(html)
+            if (clubs.isNotEmpty()) {
+                Result.success(clubs)
+            } else {
+                Result.failure(Exception("No clubs found"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Parse clubs from the website HTML (footer contains club links)
+     */
+    private fun parseClubsFromHtml(html: String): List<Club> {
+        val clubs = mutableListOf<Club>()
+        val doc = Jsoup.parse(html)
+
+        // Try to find club links in footer or navigation
+        // Icon Fitness lists clubs in footer sections by region
+        val footerLinks = doc.select("footer a[href*='iconfitness.co.il'], .footer a, #footer a, a[href*='/']")
+
+        // Also look for specific club page patterns
+        val allLinks = doc.select("a[href]")
+
+        val regionPatterns = mapOf(
+            "צפון" to listOf("בית-שאן", "טבריה", "כרמיאל", "מעלות", "נהריה", "נשר", "עכו", "עפולה", "קרית-מוצקין", "קרית-ביאליק", "זכרון"),
+            "מרכז" to listOf("הרצליה", "תל-אביב", "רעננה", "נתניה", "חולון", "בת-ים", "ראשון", "רחובות", "מודיעין", "ירושלים", "כפר-סבא", "פתח", "חדרה", "יבנה", "יהוד", "הוד-השרון", "רמלה", "אור-עקיבא", "פרדס"),
+            "דרום" to listOf("באר-שבע", "אשדוד", "אשקלון", "אילת", "דימונה", "נתיבות", "קרית-גת", "שדרות")
+        )
+
+        for (link in allLinks) {
+            val href = link.attr("href")
+            val text = link.text().trim()
+
+            // Skip empty or non-club links
+            if (text.isBlank() || href.isBlank()) continue
+            if (!href.contains("iconfitness.co.il") && !href.startsWith("/")) continue
+            if (href.contains("#") || href.contains("javascript")) continue
+            if (text.length < 3 || text.length > 50) continue
+
+            // Extract club slug from URL
+            val slug = when {
+                href.contains("iconfitness.co.il/") -> {
+                    href.substringAfter("iconfitness.co.il/").removeSuffix("/").takeIf { it.isNotBlank() }
+                }
+                href.startsWith("/") -> href.removePrefix("/").removeSuffix("/").takeIf { it.isNotBlank() }
+                else -> null
+            }
+
+            if (slug != null && !slug.contains("/") && slug !in listOf("", "clubs", "about", "contact", "terms", "privacy")) {
+                // Determine region based on name patterns
+                val region = regionPatterns.entries.find { (_, keywords) ->
+                    keywords.any { keyword -> text.contains(keyword) || slug.contains(keyword.replace("-", "")) }
+                }?.key ?: "מרכז"
+
+                val clubId = slug.lowercase().replace(Regex("[^a-z0-9-]"), "-")
+
+                // Avoid duplicates
+                if (clubs.none { it.id == clubId }) {
+                    clubs.add(Club(
+                        id = clubId,
+                        name = slug.replace("-", " ").replaceFirstChar { it.uppercase() },
+                        nameHebrew = if (text.contains("אייקון")) text else "אייקון $text",
+                        region = region,
+                        websiteUrl = if (href.startsWith("http")) href else "$BASE_URL/$slug/",
+                        hebrewSlug = slug
+                    ))
+                }
+            }
+        }
+
+        return clubs.distinctBy { it.id }
+    }
 
     /**
      * Fetch schedule for a club
@@ -57,13 +154,13 @@ class ScheduleFetcher @Inject constructor(
 
     private suspend fun fetchFromWebsite(club: Club): WeekSchedule? {
         return try {
-            // Icon Fitness uses Fizikal platform - construct schedule URL
-            val scheduleUrl = "https://www.iconfitness.co.il/club/${club.id}/schedule"
+            // Try the club's website URL
+            val scheduleUrl = club.websiteUrl.ifBlank { "$BASE_URL/${club.id}/" }
             val request = Request.Builder()
                 .url(scheduleUrl)
-                .header("User-Agent", "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36")
-                .header("Accept", "text/html,application/xhtml+xml")
-                .header("Accept-Language", "he-IL,he;q=0.9,en;q=0.8")
+                .header("User-Agent", "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+                .header("Accept-Language", "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7")
                 .build()
 
             val response = client.newCall(request).execute()
