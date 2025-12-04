@@ -5,10 +5,12 @@ import com.iconfit.schedule.data.model.Club
 /**
  * List of Icon Fitness clubs in Israel organized by region
  * Website URLs link to official schedule pages on iconfitness.co.il
+ * Schedule URLs link directly to PDF schedules when known
  */
 object ClubsData {
 
     private const val BASE_URL = "https://www.iconfitness.co.il"
+    private const val PDF_BASE = "https://www.iconfitness.co.il/wp-content/uploads"
 
     // North - צפון
     val northClubs = listOf(
@@ -45,9 +47,11 @@ object ClubsData {
         Club(id = "hod-hasharon", name = "Hod HaSharon", nameHebrew = "אייקון הוד השרון", region = "מרכז",
             websiteUrl = "$BASE_URL/hod-hasharon/", hebrewSlug = "הוד-השרון"),
         Club(id = "herzliya", name = "Herzliya", nameHebrew = "אייקון הרצליה", region = "מרכז",
-            websiteUrl = "$BASE_URL/herzliya/", hebrewSlug = "הרצליה"),
+            websiteUrl = "$BASE_URL/herzliya/", hebrewSlug = "הרצליה",
+            scheduleUrl = "$PDF_BASE/2023/05/HERZLIYA_05-23.pdf"),
         Club(id = "hadera", name = "Hadera", nameHebrew = "אייקון חדרה", region = "מרכז",
-            websiteUrl = "$BASE_URL/hadera/", hebrewSlug = "חדרה"),
+            websiteUrl = "$BASE_URL/hadera/", hebrewSlug = "חדרה",
+            scheduleUrl = "$PDF_BASE/2023/06/hadera-06-23-1.pdf"),
         Club(id = "hadera-beach", name = "Hadera Beach", nameHebrew = "חדרה מול החוף", region = "מרכז",
             websiteUrl = "$BASE_URL/hedera-mol/", hebrewSlug = "חדרה-מול-החוף"),
         Club(id = "holon", name = "Holon", nameHebrew = "אייקון חולון", region = "מרכז",
@@ -69,15 +73,16 @@ object ClubsData {
         Club(id = "petah-tikva-segula", name = "Petah Tikva Segula", nameHebrew = "אייקון פ\"ת סגולה", region = "מרכז",
             websiteUrl = "$BASE_URL/sgula/", hebrewSlug = "פתח-תקווה-סגולה"),
         Club(id = "rishon-lezion", name = "Rishon LeZion", nameHebrew = "אייקון ראשון לציון", region = "מרכז",
-            websiteUrl = "$BASE_URL/rishon-lezion/", hebrewSlug = "ראשון-לציון"),
+            websiteUrl = "$BASE_URL/rishon-lezion/", hebrewSlug = "ראשון-לציון",
+            scheduleUrl = "$PDF_BASE/2024/02/ראשון-לציון-02.2024-מעודכן.pdf"),
         Club(id = "rehovot", name = "Rehovot", nameHebrew = "אייקון רחובות", region = "מרכז",
-            websiteUrl = "$BASE_URL/rehovot/", hebrewSlug = "רחובות"),
+            websiteUrl = "$BASE_URL/rehovot/", hebrewSlug = "רחובות",
+            scheduleUrl = "$PDF_BASE/2023/11/סטודיו-נוב-23-רחובות-copy.pdf"),
         Club(id = "ramla", name = "Ramla", nameHebrew = "אייקון רמלה", region = "מרכז",
             websiteUrl = "$BASE_URL/ramla/", hebrewSlug = "רמלה"),
-        Club(id = "raanana-gav-yam", name = "Ra'anana Gav Yam", nameHebrew = "אייקון רעננה גב ים", region = "מרכז",
-            websiteUrl = "$BASE_URL/רעננה/", hebrewSlug = "רעננה"),
-        Club(id = "raanana-lev-hapark", name = "Ra'anana Lev HaPark", nameHebrew = "אייקון רעננה לב הפארק", region = "מרכז",
-            websiteUrl = "$BASE_URL/רעננה/", hebrewSlug = "רעננה-לב-הפארק"),
+        Club(id = "raanana", name = "Ra'anana", nameHebrew = "אייקון רעננה", region = "מרכז",
+            websiteUrl = "$BASE_URL/רעננה/", hebrewSlug = "רעננה",
+            scheduleUrl = "$PDF_BASE/2024/03/RAANANA-03-24.pdf"),
         Club(id = "netanya", name = "Netanya", nameHebrew = "אייקון נתניה", region = "מרכז",
             websiteUrl = "$BASE_URL/netanya/", hebrewSlug = "נתניה"),
         Club(id = "tel-aviv-shalom", name = "Tel Aviv Shalom Tower", nameHebrew = "אייקון תל אביב מגדל השלום", region = "מרכז",
@@ -87,7 +92,8 @@ object ClubsData {
         Club(id = "tel-aviv-weizmann", name = "Tel Aviv Weizmann", nameHebrew = "אייקון תל אביב ויצמן", region = "מרכז",
             websiteUrl = "$BASE_URL/tel-aviv/", hebrewSlug = "תל-אביב-ויצמן"),
         Club(id = "tel-aviv-neot-afeka", name = "Tel Aviv Neot Afeka", nameHebrew = "אייקון תל אביב נאות אפקה", region = "מרכז",
-            websiteUrl = "$BASE_URL/tel-aviv/", hebrewSlug = "תל-אביב-נאות-אפקה")
+            websiteUrl = "$BASE_URL/tel-aviv/", hebrewSlug = "תל-אביב-נאות-אפקה",
+            scheduleUrl = "$PDF_BASE/2024/02/afeka-03-24.pdf")
     )
 
     // South - דרום

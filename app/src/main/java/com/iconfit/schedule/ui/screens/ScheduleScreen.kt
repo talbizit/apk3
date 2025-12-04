@@ -162,11 +162,13 @@ fun ScheduleScreen(
                             ) { club ->
                                 val classes = viewModel.getClassesForClub(club.id)
                                 val isExpanded = uiState.expandedClubs.contains(club.id)
+                                val isRealData = viewModel.isRealData(club.id)
 
                                 ClubCard(
                                     club = club,
                                     classCount = classes.size,
                                     isExpanded = isExpanded,
+                                    isRealData = isRealData,
                                     onToggleExpand = { viewModel.toggleClubExpanded(club.id) },
                                     classes = classes,
                                     isFavorite = { viewModel.isFavorite(it) },
@@ -257,6 +259,7 @@ private fun ClubCard(
     club: Club,
     classCount: Int,
     isExpanded: Boolean,
+    isRealData: Boolean,
     onToggleExpand: () -> Unit,
     classes: List<FitnessClass>,
     isFavorite: (String) -> Boolean,
@@ -308,9 +311,16 @@ private fun ClubCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = if (classCount > 0) "$classCount שיעורים (לדוגמה)" else "טען מהאפליקציה",
+                        text = when {
+                            classCount > 0 && isRealData -> "$classCount שיעורים"
+                            classCount > 0 -> "$classCount שיעורים (לדוגמה)"
+                            else -> "לחץ לפרטים"
+                        },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        color = if (isRealData)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         textAlign = TextAlign.End,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -365,16 +375,28 @@ private fun ClubCard(
                         }
                     }
 
-                    // Sample data notice
-                    Text(
-                        text = "נתונים לדוגמה - פתח את הלוח הרשמי לשיעורים עדכניים",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
+                    // Data source notice
+                    if (!isRealData) {
+                        Text(
+                            text = "נתונים לדוגמה - פתח את הלוח הרשמי לשיעורים עדכניים",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    } else {
+                        Text(
+                            text = "נתונים מעודכנים מהאתר",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                        )
+                    }
 
                     if (classes.isEmpty()) {
                         Text(

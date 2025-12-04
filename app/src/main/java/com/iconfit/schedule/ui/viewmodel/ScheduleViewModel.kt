@@ -168,6 +168,11 @@ class ScheduleViewModel @Inject constructor(
         return getClassesForClub(clubId).isNotEmpty()
     }
 
+    fun isRealData(clubId: String): Boolean {
+        val schedule = _uiState.value.schedulesByClub[clubId]
+        return schedule?.isRealData == true
+    }
+
     fun getAllFavoriteClasses(): List<Pair<Club, FitnessClass>> {
         val state = _uiState.value
         val result = mutableListOf<Pair<Club, FitnessClass>>()

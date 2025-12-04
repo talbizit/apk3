@@ -10,7 +10,8 @@ data class Club(
     val region: String = "",
     val address: String = "",
     val websiteUrl: String = "",  // Link to official schedule page
-    val hebrewSlug: String = ""   // Hebrew URL slug for website
+    val hebrewSlug: String = "",   // Hebrew URL slug for website
+    val scheduleUrl: String = ""   // Direct link to PDF schedule
 )
 
 @Serializable
@@ -47,7 +48,8 @@ data class WeekSchedule(
     val clubId: String,
     val classes: List<FitnessClass>,
     val lastUpdated: Long, // timestamp
-    val weekStartDate: String // "yyyy-MM-dd"
+    val weekStartDate: String, // "yyyy-MM-dd"
+    val isRealData: Boolean = false // true if crawled from website, false if demo
 )
 
 @Serializable
